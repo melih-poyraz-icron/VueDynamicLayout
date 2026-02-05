@@ -4,7 +4,7 @@
     
     <div class="demo-section">
       <h2>Dynamic Layout Renderer</h2>
-      <LayoutRenderer :layout="currentLayout" />
+      <LayoutRenderer :layout="currentLayout" :eventHandlers="eventHandlers" />
     </div>
 
     <div class="layout-selector">
@@ -25,6 +25,7 @@ import { ref, computed } from 'vue'
 import { DxSelectBox } from 'devextreme-vue/select-box'
 import LayoutRenderer from './components/LayoutRenderer.vue'
 import { sampleLayouts } from './layouts/sampleLayouts'
+import notify from 'devextreme/ui/notify'
 
 const selectedLayoutId = ref('form')
 const layoutOptions = ref([
@@ -39,6 +40,26 @@ const currentLayout = computed(() => {
 
 const onLayoutChange = () => {
   console.log('Layout changed to:', selectedLayoutId.value)
+}
+
+// Event handlers for components
+const eventHandlers = {
+  handleSubmit: (e) => {
+    notify('Form submitted!', 'success', 2000)
+    console.log('Submit clicked', e)
+  },
+  handleCancel: (e) => {
+    notify('Form cancelled', 'info', 2000)
+    console.log('Cancel clicked', e)
+  },
+  handleAddRow: (e) => {
+    notify('Add row clicked', 'success', 2000)
+    console.log('Add row clicked', e)
+  },
+  handleDeleteSelected: (e) => {
+    notify('Delete selected clicked', 'warning', 2000)
+    console.log('Delete selected clicked', e)
+  }
 }
 </script>
 

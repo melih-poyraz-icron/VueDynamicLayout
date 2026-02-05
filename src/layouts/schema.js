@@ -26,9 +26,15 @@
  *    - type: "component"
  *    - component: DevExtreme component name (e.g., "DxButton")
  *    - props: component properties
- *    - events: event handlers
+ *    - events: event handlers (string names that reference handlers passed to LayoutRenderer)
+ *    - dataSource: can be an array or { api: "url" } for API fetching
  * 
- * 3. Grid Layout - CSS Grid based layout
+ * 3. Events - Event handling
+ *    - Define handlers in parent component: { handleClick: (e) => {...} }
+ *    - Pass to LayoutRenderer: <LayoutRenderer :eventHandlers="eventHandlers" />
+ *    - Reference in layout: events: { "click": "handleClick" }
+ * 
+ * 4. Grid Layout - CSS Grid based layout
  *    - layout: "grid"
  *    - gridTemplate: { columns: "1fr 1fr", rows: "auto", gap: "20px" }
  * 
@@ -44,6 +50,22 @@
  *       "props": {
  *         "text": "Click Me",
  *         "type": "default"
+ *       },
+ *       "events": {
+ *         "click": "handleClick"
+ *       }
+ *     },
+ *     {
+ *       "type": "component",
+ *       "component": "DxDataGrid",
+ *       "props": {
+ *         "dataSource": {
+ *           "api": "https://api.example.com/data"
+ *         },
+ *         "columns": [
+ *           { "dataField": "id", "caption": "ID" },
+ *           { "dataField": "name", "caption": "Name" }
+ *         ]
  *       }
  *     }
  *   ]

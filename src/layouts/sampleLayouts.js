@@ -49,6 +49,9 @@ export const sampleLayouts = {
             props: {
               text: "Cancel",
               type: "normal"
+            },
+            events: {
+              click: "handleCancel"
             }
           },
           {
@@ -57,6 +60,9 @@ export const sampleLayouts = {
             props: {
               text: "Submit",
               type: "default"
+            },
+            events: {
+              click: "handleSubmit"
             }
           }
         ]
@@ -82,6 +88,9 @@ export const sampleLayouts = {
               text: "Add Row",
               icon: "add",
               type: "success"
+            },
+            events: {
+              click: "handleAddRow"
             }
           },
           {
@@ -91,6 +100,9 @@ export const sampleLayouts = {
               text: "Delete Selected",
               icon: "trash",
               type: "danger"
+            },
+            events: {
+              click: "handleDeleteSelected"
             }
           }
         ]
@@ -99,11 +111,9 @@ export const sampleLayouts = {
         type: "component",
         component: "DxDataGrid",
         props: {
-          dataSource: [
-            { id: 1, name: "John Doe", email: "john@example.com", role: "Admin" },
-            { id: 2, name: "Jane Smith", email: "jane@example.com", role: "User" },
-            { id: 3, name: "Bob Johnson", email: "bob@example.com", role: "User" }
-          ],
+          dataSource: {
+            api: "https://jsonplaceholder.typicode.com/users"
+          },
           keyExpr: "id",
           showBorders: true,
           rowAlternationEnabled: true,
@@ -111,13 +121,23 @@ export const sampleLayouts = {
             { dataField: "id", caption: "ID", width: 70 },
             { dataField: "name", caption: "Name" },
             { dataField: "email", caption: "Email" },
-            { dataField: "role", caption: "Role" }
+            { dataField: "username", caption: "Username" },
+            { dataField: "phone", caption: "Phone" },
+            { dataField: "website", caption: "Website" }
           ],
           paging: {
             pageSize: 10
           },
           selection: {
             mode: "multiple"
+          },
+          filterRow: {
+            visible: true
+          },
+          searchPanel: {
+            visible: true,
+            width: 240,
+            placeholder: "Search..."
           }
         }
       }

@@ -97,6 +97,60 @@ The application will be available at `http://localhost:3000`
 }
 ```
 
+### Event Handlers
+
+Define event handlers in your Vue component and pass them to LayoutRenderer:
+
+**In your component:**
+```javascript
+const eventHandlers = {
+  handleClick: (e) => {
+    console.log('Button clicked', e)
+  },
+  handleSubmit: (e) => {
+    notify('Form submitted!', 'success', 2000)
+  }
+}
+```
+
+**In template:**
+```vue
+<LayoutRenderer :layout="myLayout" :eventHandlers="eventHandlers" />
+```
+
+**In layout JSON:**
+```javascript
+{
+  type: "component",
+  component: "DxButton",
+  props: { text: "Submit" },
+  events: {
+    click: "handleSubmit"  // References eventHandlers.handleSubmit
+  }
+}
+```
+
+### API Data Source
+
+Components can fetch data from REST APIs:
+
+```json
+{
+  "type": "component",
+  "component": "DxDataGrid",
+  "props": {
+    "dataSource": {
+      "api": "https://api.example.com/users"
+    },
+    "columns": [
+      { "dataField": "id", "caption": "ID" },
+      { "dataField": "name", "caption": "Name" },
+      { "dataField": "email", "caption": "Email" }
+    ]
+  }
+}
+```
+
 ## 📚 Supported Components
 
 ### Form Components
@@ -152,6 +206,27 @@ The application will be available at `http://localhost:3000`
       }
     }
   ]
+}
+```
+
+### Data Grid with API
+The grid layout example fetches data from JSONPlaceholder API:
+```javascript
+{
+  type: "component",
+  component: "DxDataGrid",
+  props: {
+    dataSource: {
+      api: "https://jsonplaceholder.typicode.com/users"
+    },
+    columns: [
+      { dataField: "id", caption: "ID" },
+      { dataField: "name", caption: "Name" },
+      { dataField: "email", caption: "Email" }
+    ],
+    filterRow: { visible: true },
+    searchPanel: { visible: true }
+  }
 }
 ```
 

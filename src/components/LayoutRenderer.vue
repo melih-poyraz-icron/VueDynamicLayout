@@ -6,30 +6,77 @@
 </template>
 
 <script setup>
-import { h } from 'vue'
+import { h, ref, onMounted, reactive, watch } from 'vue'
 import { getComponent } from './componentRegistry'
 
 const props = defineProps({
   layout: {
     type: Object,
     required: true
+  },
+  eventHandlers: {
+    type: Object,
+    default: () => ({})
   }
 })
+
+// Store for API data sources
+const apiDataStore = reactive({})
+
+// Fetch API data on mount
+onMounted(() => {
+  collectAndFetchApiData(props.layout)
+})
+
+// Watch for layout changes and refetch data
+watch(() => props.layout, (newLayout) => {
+  // Clear existing data
+  Object.keys(apiDataStore).forEach(key => delete apiDataStore[key])
+  // Fetch new data
+  collectAndFetchApiData(newLayout)
+}, { deep: true })
+
+/**
+ * Recursively collect all API data sources and fetch them
+ */
+async function collectAndFetchApiData(node, path = '') {
+  if (!node) return
+
+  if (node.type === 'component' && node.props?.dataSource?.api) {
+    const apiUrl = node.props.dataSource.api
+    const key = `${path}_${node.component}_${apiUrl}`
+    
+    try {
+      const response = await fetch(apiUrl)
+      const data = await response.json()
+      apiDataStore[key] = data
+    } catch (error) {
+      console.error(`Error fetching data from ${apiUrl}:`, error)
+      apiDataStore[key] = []
+    }
+  }
+
+  if (node.children && Array.isArray(node.children)) {
+    for (let i = 0; i < node.children.length; i++) {
+      await collectAndFetchApiData(node.children[i], `${path}_${i}`)
+    }
+  }
+}
 
 /**
  * Recursively render a layout node
  */
-function renderNode(node) {
+function renderNode(node, path = '') {
   if (!node) return null
 
   // Render container
   if (node.type === 'container') {
-    return () => renderContainer(node)
+    return () => renderContainer(node, path)
   }
 
   // Render component
   if (node.type === 'component') {
-    return () => renderComponent(node)
+    return () => renderComponent(node, path)
   }
 
   return null
@@ -38,7 +85,7 @@ function renderNode(node) {
 /**
  * Render a container with layout
  */
-function renderContainer(node) {
+function renderContainer(node, path = '') {
   const { layout = 'vertical', children = [], style = {}, gridTemplate, class: className } = node
 
   // Build container style
@@ -57,7 +104,7 @@ function renderContainer(node) {
 
   // Render children
   const childNodes = children.map((child, index) => 
-    h(renderNode(child), { key: index })
+    h(renderNode(child, `${path}_${index}`), { key: index })
   )
 
   return h('div', {
@@ -69,8 +116,8 @@ function renderContainer(node) {
 /**
  * Render a DevExtreme component
  */
-function renderComponent(node) {
-  const { component: componentName, props = {}, style = {}, class: className, events = {} } = node
+function renderComponent(node, path = '') {
+  const { component: componentName, props: nodeProps = {}, style = {}, class: className, events = {} } = node
 
   // Get component from registry
   const Component = getComponent(componentName)
@@ -81,14 +128,33 @@ function renderComponent(node) {
   }
 
   // Build component props
-  const componentProps = { ...props }
+  const componentProps = { ...nodeProps }
+
+  // Handle API data source
+  if (componentProps.dataSource && typeof componentProps.dataSource === 'object' && componentProps.dataSource.api) {
+    const apiUrl = componentProps.dataSource.api
+    const key = `${path}_${componentName}_${apiUrl}`
+    
+    // Use data from store if available
+    if (apiDataStore[key]) {
+      componentProps.dataSource = apiDataStore[key]
+    } else {
+      componentProps.dataSource = []
+    }
+  }
 
   // Add event handlers
   Object.keys(events).forEach(eventName => {
     const handlerName = events[eventName]
     if (typeof handlerName === 'string') {
-      // You can implement event handler lookup here
-      console.log(`Event handler: ${eventName} -> ${handlerName}`)
+      // Lookup handler in eventHandlers prop
+      const handlers = props.eventHandlers || {}
+      const handler = handlers[handlerName]
+      if (handler) {
+        componentProps[`on${eventName.charAt(0).toUpperCase()}${eventName.slice(1)}`] = handler
+      } else {
+        console.warn(`Event handler "${handlerName}" not found in eventHandlers prop`)
+      }
     } else if (typeof handlerName === 'function') {
       componentProps[`on${eventName.charAt(0).toUpperCase()}${eventName.slice(1)}`] = handlerName
     }
