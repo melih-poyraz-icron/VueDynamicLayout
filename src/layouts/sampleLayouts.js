@@ -51,7 +51,14 @@ export const sampleLayouts = {
               type: "normal"
             },
             events: {
-              click: "handleCancel"
+              click: {
+                handler: "handleButtonClick",
+                args: {
+                  action: "cancel",
+                  message: "Form cancelled",
+                  notifyType: "info"
+                }
+              }
             }
           },
           {
@@ -62,7 +69,14 @@ export const sampleLayouts = {
               type: "default"
             },
             events: {
-              click: "handleSubmit"
+              click: {
+                handler: "handleButtonClick",
+                args: {
+                  action: "submit",
+                  message: "Form submitted successfully!",
+                  notifyType: "success"
+                }
+              }
             }
           }
         ]
@@ -90,7 +104,14 @@ export const sampleLayouts = {
               type: "success"
             },
             events: {
-              click: "handleAddRow"
+              click: {
+                handler: "handleButtonClick",
+                args: {
+                  action: "addRow",
+                  message: "New row added!",
+                  notifyType: "success"
+                }
+              }
             }
           },
           {
@@ -102,7 +123,14 @@ export const sampleLayouts = {
               type: "danger"
             },
             events: {
-              click: "handleDeleteSelected"
+              click: {
+                handler: "handleButtonClick",
+                args: {
+                  action: "deleteSelected",
+                  message: "Selected rows deleted!",
+                  notifyType: "warning"
+                }
+              }
             }
           }
         ]

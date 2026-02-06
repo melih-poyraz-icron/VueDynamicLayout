@@ -44,21 +44,27 @@ const onLayoutChange = () => {
 
 // Event handlers for components
 const eventHandlers = {
-  handleSubmit: (e) => {
-    notify('Form submitted!', 'success', 2000)
-    console.log('Submit clicked', e)
-  },
-  handleCancel: (e) => {
-    notify('Form cancelled', 'info', 2000)
-    console.log('Cancel clicked', e)
-  },
-  handleAddRow: (e) => {
-    notify('Add row clicked', 'success', 2000)
-    console.log('Add row clicked', e)
-  },
-  handleDeleteSelected: (e) => {
-    notify('Delete selected clicked', 'warning', 2000)
-    console.log('Delete selected clicked', e)
+  // Generic button click handler
+  handleButtonClick: (e, args = {}) => {
+    const { 
+      action, 
+      message, 
+      notifyType = 'info',
+      callback 
+    } = args
+    
+    // Show notification
+    if (message) {
+      notify(message, notifyType, 2000)
+    }
+    
+    // Log action
+    console.log('Button clicked:', { action, args, event: e })
+    
+    // Execute custom callback if provided
+    if (callback && typeof callback === 'function') {
+      callback(e, args)
+    }
   }
 }
 </script>

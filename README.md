@@ -101,14 +101,30 @@ The application will be available at `http://localhost:3000`
 
 Define event handlers in your Vue component and pass them to LayoutRenderer:
 
-**In your component:**
+**Generic Handler Pattern (Recommended):**
 ```javascript
 const eventHandlers = {
-  handleClick: (e) => {
-    console.log('Button clicked', e)
-  },
-  handleSubmit: (e) => {
-    notify('Form submitted!', 'success', 2000)
+  // Single handler for all buttons
+  handleButtonClick: (e, args = {}) => {
+    const { 
+      action, 
+      message, 
+      notifyType = 'info',
+      callback 
+    } = args
+    
+    // Show notification
+    if (message) {
+      notify(message, notifyType, 2000)
+    }
+    
+    // Log action
+    console.log('Button clicked:', { action, args, event: e })
+    
+    // Execute custom callback if provided
+    if (callback && typeof callback === 'function') {
+      callback(e, args)
+    }
   }
 }
 ```
@@ -118,17 +134,43 @@ const eventHandlers = {
 <LayoutRenderer :layout="myLayout" :eventHandlers="eventHandlers" />
 ```
 
-**In layout JSON:**
+**In layout JSON (with arguments):**
 ```javascript
 {
   type: "component",
   component: "DxButton",
   props: { text: "Submit" },
   events: {
-    click: "handleSubmit"  // References eventHandlers.handleSubmit
+    click: {
+      handler: "handleButtonClick",
+      args: {
+        action: "submit",
+        message: "Form submitted successfully!",
+        notifyType: "success"
+      }
+    }
   }
 }
 ```
+
+**In layout JSON (simple format):**
+```javascript
+{
+  type: "component",
+  component: "DxButton",
+  props: { text: "Click" },
+  events: {
+    click: "handleButtonClick"  // Simple string reference (no args)
+  }
+}
+```
+
+**Benefits:**
+- ✅ Single handler for all buttons
+- ✅ Consistent notification handling
+- ✅ Easy to maintain and test
+- ✅ Flexible with custom callbacks
+- ✅ Reusable across layouts
 
 ### API Data Source
 

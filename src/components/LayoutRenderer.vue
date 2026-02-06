@@ -145,18 +145,41 @@ function renderComponent(node, path = '') {
 
   // Add event handlers
   Object.keys(events).forEach(eventName => {
-    const handlerName = events[eventName]
-    if (typeof handlerName === 'string') {
-      // Lookup handler in eventHandlers prop
-      const handlers = props.eventHandlers || {}
-      const handler = handlers[handlerName]
-      if (handler) {
-        componentProps[`on${eventName.charAt(0).toUpperCase()}${eventName.slice(1)}`] = handler
-      } else {
-        console.warn(`Event handler "${handlerName}" not found in eventHandlers prop`)
+    const eventConfig = events[eventName]
+    const handlers = props.eventHandlers || {}
+    
+    // Handle different event configuration formats
+    let handler = null
+    let args = null
+    
+    if (typeof eventConfig === 'string') {
+      // Simple string reference: "handleClick"
+      handler = handlers[eventConfig]
+    } else if (typeof eventConfig === 'object' && eventConfig.handler) {
+      // Object with handler and args: { handler: "handleClick", args: {...} }
+      handler = handlers[eventConfig.handler]
+      args = eventConfig.args
+    } else if (typeof eventConfig === 'function') {
+      // Direct function reference
+      handler = eventConfig
+    }
+    
+    if (handler) {
+      // Wrap handler to pass custom args along with event
+      const wrappedHandler = (e) => {
+        if (args) {
+          handler(e, args)
+        } else {
+          handler(e)
+        }
       }
-    } else if (typeof handlerName === 'function') {
-      componentProps[`on${eventName.charAt(0).toUpperCase()}${eventName.slice(1)}`] = handlerName
+      
+      // Convert event name to proper format
+      componentProps[`on${eventName.charAt(0).toUpperCase()}${eventName.slice(1)}`] = wrappedHandler
+    } else if (typeof eventConfig === 'string') {
+      console.warn(`Event handler "${eventConfig}" not found in eventHandlers prop`)
+    } else if (eventConfig && eventConfig.handler) {
+      console.warn(`Event handler "${eventConfig.handler}" not found in eventHandlers prop`)
     }
   })
 

@@ -29,10 +29,12 @@
  *    - events: event handlers (string names that reference handlers passed to LayoutRenderer)
  *    - dataSource: can be an array or { api: "url" } for API fetching
  * 
- * 3. Events - Event handling
- *    - Define handlers in parent component: { handleClick: (e) => {...} }
+ * 3. Events - Event handling (Recommended: Generic Handler Pattern)
+ *    - Define generic handler: { handleButtonClick: (e, args) => {...} }
  *    - Pass to LayoutRenderer: <LayoutRenderer :eventHandlers="eventHandlers" />
- *    - Reference in layout: events: { "click": "handleClick" }
+ *    - Simple format: events: { "click": "handleButtonClick" }
+ *    - With args: events: { "click": { handler: "handleButtonClick", args: { action: "submit", message: "Done!" } } }
+ *    - Args can include: action, message, notifyType, callback, and any custom data
  * 
  * 4. Grid Layout - CSS Grid based layout
  *    - layout: "grid"
@@ -48,11 +50,18 @@
  *       "type": "component",
  *       "component": "DxButton",
  *       "props": {
- *         "text": "Click Me",
+ *         "text": "Submit",
  *         "type": "default"
  *       },
  *       "events": {
- *         "click": "handleClick"
+ *         "click": {
+ *           "handler": "handleButtonClick",
+ *           "args": {
+ *             "action": "submit",
+ *             "message": "Form submitted!",
+ *             "notifyType": "success"
+ *           }
+ *         }
  *       }
  *     },
  *     {
