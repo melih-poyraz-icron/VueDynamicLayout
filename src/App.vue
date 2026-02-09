@@ -50,10 +50,25 @@ const eventHandlers = {
       action, 
       message, 
       notifyType = 'info',
-      callback 
+      callback,
+      selectedRows,
+      selectedKeys
     } = args
     
-    // Show notification
+    // Handle delete action with resolved selected rows
+    if (action === 'deleteSelected') {
+      if (selectedKeys && selectedKeys.length > 0) {
+        notify(`Deleting ${selectedKeys.length} row(s)`, 'warning', 2000)
+        console.log('Selected keys:', selectedKeys)
+        console.log('Selected row data:', selectedRows)
+        // Perform actual delete operation here
+      } else {
+        notify('No rows selected', 'info', 2000)
+      }
+      return
+    }
+    
+    // Show notification for other actions
     if (message) {
       notify(message, notifyType, 2000)
     }

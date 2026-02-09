@@ -126,8 +126,17 @@ export const sampleLayouts = {
               click: {
                 handler: "handleButtonClick",
                 args: {
-                  action: "deleteSelected",
-                  message: "Selected rows deleted!",
+                  queryParameters: {},
+                  headers: {
+                    "Content-Type": "application/json",
+                    messageCode: "DS",
+                  },
+                  //body: "$mainGrid.getSelectedRowsData()",
+                  body: {
+                    "InputObject": "$mainGrid.getSelectedRowsData()",
+                    "ScenarioCode": "DeleteUsers",
+                    "Expression": "Users",
+                  },
                   notifyType: "warning"
                 }
               }
@@ -138,9 +147,18 @@ export const sampleLayouts = {
       {
         type: "component",
         component: "DxDataGrid",
+        id: "mainGrid",
         props: {
           dataSource: {
-            api: "https://jsonplaceholder.typicode.com/users"
+            api: "https://jsonplaceholder.typicode.com/users",
+            /*headers: {
+              "MessageSchemaCode": "DS",
+            },
+            body: {
+              "ScenarioCode": "GetUsers",
+              "Expression": "Users",
+              "ParentClassName": "UserService"
+            }*/
           },
           keyExpr: "id",
           showBorders: true,
@@ -185,9 +203,9 @@ export const sampleLayouts = {
       {
         type: "container",
         layout: "vertical",
-        style: { 
-          padding: "20px", 
-          background: "#f9f9f9", 
+        style: {
+          padding: "20px",
+          background: "#f9f9f9",
           borderRadius: "8px",
           border: "1px solid #e0e0e0"
         },
@@ -219,9 +237,9 @@ export const sampleLayouts = {
       {
         type: "container",
         layout: "vertical",
-        style: { 
-          padding: "20px", 
-          background: "#f9f9f9", 
+        style: {
+          padding: "20px",
+          background: "#f9f9f9",
           borderRadius: "8px",
           border: "1px solid #e0e0e0"
         },
@@ -253,9 +271,9 @@ export const sampleLayouts = {
       {
         type: "container",
         layout: "vertical",
-        style: { 
-          padding: "20px", 
-          background: "#f9f9f9", 
+        style: {
+          padding: "20px",
+          background: "#f9f9f9",
           borderRadius: "8px",
           border: "1px solid #e0e0e0",
           gridColumn: "1 / -1"

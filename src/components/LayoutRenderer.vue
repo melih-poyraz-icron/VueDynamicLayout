@@ -23,6 +23,9 @@ const props = defineProps({
 // Store for API data sources
 const apiDataStore = reactive({})
 
+// Store for component references
+const componentRefs = reactive({})
+
 // Fetch API data on mount
 onMounted(() => {
   collectAndFetchApiData(props.layout)
@@ -35,6 +38,87 @@ watch(() => props.layout, (newLayout) => {
   // Fetch new data
   collectAndFetchApiData(newLayout)
 }, { deep: true })
+
+/**
+ * Resolve expression in args (e.g., "$mainGrid.getSelectedRowsData()")
+ */
+function resolveExpression(value) {
+  if (typeof value !== 'string' || !value.startsWith('$')) {
+    return value
+  }
+
+  // Parse expression: $componentId.method() or $componentId.method(args)
+  const match = value.match(/^\$(\w+)\.([\w.]+)(\((.*)\))?$/)
+  if (!match) {
+    console.warn(`Invalid expression syntax: ${value}`)
+    return value
+  }
+
+  const [, componentId, methodPath, , argsStr] = match
+  const componentRef = componentRefs[componentId]
+
+  if (!componentRef || !componentRef.component) {
+    console.warn(`Component "${componentId}" not found or not initialized`)
+    return undefined
+  }
+
+  try {
+    // Navigate method path (e.g., "option" or "columnOption")
+    let target = componentRef.component
+    const method = target[methodPath]
+
+    if (typeof method !== 'function') {
+      console.warn(`Method "${methodPath}" not found on component "${componentId}"`)
+      return undefined
+    }
+
+    // Parse arguments if present
+    let args = []
+    if (argsStr && argsStr.trim()) {
+      try {
+        args = JSON.parse(`[${argsStr}]`)
+      } catch (e) {
+        console.warn(`Failed to parse arguments for ${value}:`, e)
+      }
+    }
+
+    // Call method and return result
+    return method.apply(target, args)
+  } catch (error) {
+    console.error(`Error executing expression ${value}:`, error)
+    return undefined
+  }
+}
+
+/**
+ * Recursively resolve all expressions in an object
+ */
+function resolveArgs(args) {
+  if (!args || typeof args !== 'object') {
+    return args
+  }
+
+  if (Array.isArray(args)) {
+    return args.map(item => 
+      typeof item === 'string' && item.startsWith('$') 
+        ? resolveExpression(item) 
+        : resolveArgs(item)
+    )
+  }
+
+  const resolved = {}
+  for (const key in args) {
+    const value = args[key]
+    if (typeof value === 'string' && value.startsWith('$')) {
+      resolved[key] = resolveExpression(value)
+    } else if (typeof value === 'object') {
+      resolved[key] = resolveArgs(value)
+    } else {
+      resolved[key] = value
+    }
+  }
+  return resolved
+}
 
 /**
  * Recursively collect all API data sources and fetch them
@@ -117,7 +201,7 @@ function renderContainer(node, path = '') {
  * Render a DevExtreme component
  */
 function renderComponent(node, path = '') {
-  const { component: componentName, props: nodeProps = {}, style = {}, class: className, events = {} } = node
+  const { component: componentName, props: nodeProps = {}, style = {}, class: className, events = {}, id } = node
 
   // Get component from registry
   const Component = getComponent(componentName)
@@ -129,6 +213,17 @@ function renderComponent(node, path = '') {
 
   // Build component props
   const componentProps = { ...nodeProps }
+
+  // Store component reference if id is provided
+  if (id) {
+    componentProps.onInitialized = (e) => {
+      componentRefs[id] = e
+      // Call original onInitialized if exists
+      if (nodeProps.onInitialized) {
+        nodeProps.onInitialized(e)
+      }
+    }
+  }
 
   // Handle API data source
   if (componentProps.dataSource && typeof componentProps.dataSource === 'object' && componentProps.dataSource.api) {
@@ -165,17 +260,24 @@ function renderComponent(node, path = '') {
     }
     
     if (handler) {
-      // Wrap handler to pass custom args along with event
+      // Wrap handler to resolve expressions and pass custom args
       const wrappedHandler = (e) => {
         if (args) {
-          handler(e, args)
+          // Resolve expressions in args at runtime
+          const resolvedArgs = resolveArgs(args)
+          handler(e, resolvedArgs)
         } else {
           handler(e)
         }
       }
       
-      // Convert event name to proper format
-      componentProps[`on${eventName.charAt(0).toUpperCase()}${eventName.slice(1)}`] = wrappedHandler
+      // Convert event name to proper format (handle hyphenated names)
+      const eventParts = eventName.split('-')
+      const camelCaseEvent = eventParts
+        .map((part, index) => index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1))
+        .join('')
+      
+      componentProps[`on${camelCaseEvent.charAt(0).toUpperCase()}${camelCaseEvent.slice(1)}`] = wrappedHandler
     } else if (typeof eventConfig === 'string') {
       console.warn(`Event handler "${eventConfig}" not found in eventHandlers prop`)
     } else if (eventConfig && eventConfig.handler) {

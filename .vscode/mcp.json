@@ -3,10 +3,6 @@
 		"dxdocs": {
 			"url": "https://api.devexpress.com/mcp/docs",
 			"type": "http"
-		},
-		"my-mcp-server-03c0f9ac": {
-			"url": "https://api.devexpress.com/mcp/docs",
-			"type": "http"
 		}
 	},
 	"inputs": []
