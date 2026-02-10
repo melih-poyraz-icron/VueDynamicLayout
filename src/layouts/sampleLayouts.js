@@ -206,14 +206,6 @@ export const sampleLayouts = {
                     width: 240,
                     placeholder: "Search..."
                   }
-                },
-                events: {
-                  "selection-changed": {
-                    handler: "handleGridSelectionChanged",
-                    args: {
-                      detailsGridId: "userDetailsGrid"
-                    }
-                  }
                 }
               }
             ]
@@ -238,6 +230,12 @@ export const sampleLayouts = {
                 type: "component",
                 component: "DxDataGrid",
                 id: "userDetailsGrid",
+                parentComponent: "mainGrid",
+                parentEvent: "selection-changed",
+                dataFetchConfig: {
+                  apiTemplate: "https://jsonplaceholder.typicode.com/posts?userId={id}",
+                  parentKeyField: "id"
+                },
                 props: {
                   dataSource: [],
                   keyExpr: "id",

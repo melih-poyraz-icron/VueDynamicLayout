@@ -29,39 +29,12 @@ const componentRefs = reactive({})
 // Fetch API data on mount
 onMounted(() => {
   collectAndFetchApiData(props.layout)
-  
-  // Listen for custom grid data update events
-  window.addEventListener('updateGridData', handleUpdateGridData)
 })
 
 // Cleanup event listener on unmount
 onUnmounted(() => {
-  window.removeEventListener('updateGridData', handleUpdateGridData)
+  // Cleanup if needed
 })
-
-/**
- * Handle custom event to update grid data
- */
-function handleUpdateGridData(event) {
-  const { gridId, data } = event.detail
-  
-  console.log('Received updateGridData event:', { gridId, dataLength: data?.length })
-  console.log('Available component refs:', Object.keys(componentRefs))
-  
-  if (gridId && componentRefs[gridId]) {
-    console.log('Found component ref for:', gridId)
-    const gridInstance = componentRefs[gridId].component
-    
-    if (gridInstance && typeof gridInstance.option === 'function') {
-      gridInstance.option('dataSource', data)
-      console.log(`Successfully updated ${gridId} with ${data.length} items`)
-    } else {
-      console.error('Grid instance not found or option method not available:', gridInstance)
-    }
-  } else {
-    console.error(`Component ref not found for: ${gridId}`)
-  }
-}
 
 // Watch for layout changes and refetch data
 watch(() => props.layout, (newLayout) => {
@@ -180,6 +153,85 @@ async function collectAndFetchApiData(node, path = '') {
 }
 
 /**
+ * Setup parent-child component relationship
+ * The child component will listen to parent's events and fetch data accordingly
+ */
+function setupParentChildRelationship(childId, parentId, eventName, dataFetchConfig, childInstance) {
+  console.log(`Setting up parent-child relationship: ${parentId} -> ${childId}`)
+  
+  // Wait a bit for parent to initialize if needed
+  const checkParent = () => {
+    const parentRef = componentRefs[parentId]
+    
+    if (!parentRef || !parentRef.component) {
+      console.warn(`Parent component ${parentId} not yet initialized, retrying...`)
+      setTimeout(checkParent, 100)
+      return
+    }
+    
+    console.log(`Found parent component ${parentId}, attaching event listener`)
+    
+    // Get the parent component instance
+    const parentComponent = parentRef.component
+    const childComponent = childInstance.component
+    
+    // Convert event name from hyphenated to camelCase for DevExtreme event subscription
+    // "selection-changed" -> "selectionChanged"
+    const eventParts = eventName.split('-')
+    const camelCaseEvent = eventParts
+      .map((part, index) => index === 0 ? part : part.charAt(0).toUpperCase() + part.slice(1))
+      .join('')
+    
+    console.log(`Subscribing to parent event: ${camelCaseEvent}`)
+    
+    // Create event handler
+    const eventHandler = async (e) => {
+      console.log(`✓ Parent event ${camelCaseEvent} fired on ${parentId}`)
+      
+      const selectedRows = e.selectedRowsData || []
+      
+      if (selectedRows.length === 0) {
+        console.log('No row selected, clearing child grid')
+        childComponent.option('dataSource', [])
+        return
+      }
+      
+      const selectedRow = selectedRows[0]
+      const keyValue = selectedRow[dataFetchConfig.parentKeyField]
+      
+      console.log(`Selected row key: ${keyValue}, fetching data...`)
+      
+      // Build API URL from template
+      const apiUrl = dataFetchConfig.apiTemplate.replace(`{${dataFetchConfig.parentKeyField}}`, keyValue)
+      
+      console.log(`Fetching data from: ${apiUrl}`)
+      
+      try {
+        const response = await fetch(apiUrl)
+        const data = await response.json()
+        
+        console.log(`✓ Fetched ${data.length} items for child grid ${childId}`)
+        
+        // Update child grid data source
+        childComponent.option('dataSource', data)
+      } catch (error) {
+        console.error(`Error fetching data for ${childId}:`, error)
+        childComponent.option('dataSource', [])
+      }
+    }
+    
+    // Attach the event handler to parent using DevExtreme's event system
+    // Use camelCase event name for subscription
+    parentComponent.on(camelCaseEvent, eventHandler)
+    
+    console.log(`✓ Parent-child relationship established: ${parentId}.${camelCaseEvent} -> ${childId}`)
+  }
+  
+  // Start checking for parent
+  checkParent()
+}
+
+/**
  * Recursively render a layout node
  */
 function renderNode(node, path = '') {
@@ -233,7 +285,7 @@ function renderContainer(node, path = '') {
  * Render a DevExtreme component
  */
 function renderComponent(node, path = '') {
-  const { component: componentName, props: nodeProps = {}, style = {}, class: className, events = {}, id } = node
+  const { component: componentName, props: nodeProps = {}, style = {}, class: className, events = {}, id, parentComponent, parentEvent, dataFetchConfig } = node
 
   // Get component from registry
   const Component = getComponent(componentName)
@@ -250,10 +302,26 @@ function renderComponent(node, path = '') {
   if (id) {
     componentProps.onInitialized = (e) => {
       componentRefs[id] = e
-      console.log(`Component ${id} initialized:`, e.component ? 'component available' : 'component NOT available')
+      console.log(`Component ${id} initialized`)
+      console.log(`  - Component instance:`, e.component ? '✓' : '✗')
+      console.log(`  - Element:`, e.element ? '✓' : '✗')
+      
+      if (e.component) {
+        console.log(`  - Available methods:`, {
+          on: typeof e.component.on === 'function',
+          option: typeof e.component.option === 'function',
+          getSelectedRowsData: typeof e.component.getSelectedRowsData === 'function'
+        })
+      }
+      
       // Call original onInitialized if exists
       if (nodeProps.onInitialized) {
         nodeProps.onInitialized(e)
+      }
+      
+      // Setup parent-child relationship if parentComponent is specified
+      if (parentComponent && parentEvent && dataFetchConfig) {
+        setupParentChildRelationship(id, parentComponent, parentEvent, dataFetchConfig, e)
       }
     }
   }
