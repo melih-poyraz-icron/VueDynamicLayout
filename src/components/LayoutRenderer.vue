@@ -6,7 +6,7 @@
 </template>
 
 <script setup>
-import { h, ref, onMounted, reactive, watch } from 'vue'
+import { h, ref, onMounted, onUnmounted, reactive, watch } from 'vue'
 import { getComponent } from './componentRegistry'
 
 const props = defineProps({
@@ -29,7 +29,39 @@ const componentRefs = reactive({})
 // Fetch API data on mount
 onMounted(() => {
   collectAndFetchApiData(props.layout)
+  
+  // Listen for custom grid data update events
+  window.addEventListener('updateGridData', handleUpdateGridData)
 })
+
+// Cleanup event listener on unmount
+onUnmounted(() => {
+  window.removeEventListener('updateGridData', handleUpdateGridData)
+})
+
+/**
+ * Handle custom event to update grid data
+ */
+function handleUpdateGridData(event) {
+  const { gridId, data } = event.detail
+  
+  console.log('Received updateGridData event:', { gridId, dataLength: data?.length })
+  console.log('Available component refs:', Object.keys(componentRefs))
+  
+  if (gridId && componentRefs[gridId]) {
+    console.log('Found component ref for:', gridId)
+    const gridInstance = componentRefs[gridId].component
+    
+    if (gridInstance && typeof gridInstance.option === 'function') {
+      gridInstance.option('dataSource', data)
+      console.log(`Successfully updated ${gridId} with ${data.length} items`)
+    } else {
+      console.error('Grid instance not found or option method not available:', gridInstance)
+    }
+  } else {
+    console.error(`Component ref not found for: ${gridId}`)
+  }
+}
 
 // Watch for layout changes and refetch data
 watch(() => props.layout, (newLayout) => {
@@ -218,6 +250,7 @@ function renderComponent(node, path = '') {
   if (id) {
     componentProps.onInitialized = (e) => {
       componentRefs[id] = e
+      console.log(`Component ${id} initialized:`, e.component ? 'component available' : 'component NOT available')
       // Call original onInitialized if exists
       if (nodeProps.onInitialized) {
         nodeProps.onInitialized(e)
@@ -287,6 +320,7 @@ function renderComponent(node, path = '') {
 
   // Render component
   return h('div', {
+    id: id,
     class: className,
     style: style
   }, [

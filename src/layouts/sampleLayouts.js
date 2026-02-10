@@ -131,12 +131,12 @@ export const sampleLayouts = {
                     "Content-Type": "application/json",
                     messageCode: "DS",
                   },
-                  //body: "$mainGrid.getSelectedRowsData()",
-                  body: {
+                  body: "$mainGrid.getSelectedRowsData()",
+                  /*body: {
                     "InputObject": "$mainGrid.getSelectedRowsData()",
                     "ScenarioCode": "DeleteUsers",
                     "Expression": "Users",
-                  },
+                  },*/
                   notifyType: "warning"
                 }
               }
@@ -145,47 +145,118 @@ export const sampleLayouts = {
         ]
       },
       {
-        type: "component",
-        component: "DxDataGrid",
-        id: "mainGrid",
-        props: {
-          dataSource: {
-            api: "https://jsonplaceholder.typicode.com/users",
-            /*headers: {
-              "MessageSchemaCode": "DS",
-            },
-            body: {
-              "ScenarioCode": "GetUsers",
-              "Expression": "Users",
-              "ParentClassName": "UserService"
-            }*/
+        type: "container",
+        layout: "horizontal",
+        style: { gap: "20px" },
+        children: [
+          {
+            type: "container",
+            layout: "vertical",
+            style: { flex: "1" },
+            children: [
+              {
+                type: "component",
+                component: "DxButton",
+                props: {
+                  text: "Users",
+                  type: "default",
+                  stylingMode: "outlined",
+                  disabled: true
+                },
+                style: { marginBottom: "10px" }
+              },
+              {
+                type: "component",
+                component: "DxDataGrid",
+                id: "mainGrid",
+                props: {
+                  dataSource: {
+                    api: "https://jsonplaceholder.typicode.com/users",
+                    /*headers: {
+                      "MessageSchemaCode": "DS",
+                    },
+                    body: {
+                      "ScenarioCode": "GetUsers",
+                      "Expression": "Users",
+                      "ParentClassName": "UserService"
+                    }*/
+                  },
+                  keyExpr: "id",
+                  showBorders: true,
+                  rowAlternationEnabled: true,
+                  columns: [
+                    { dataField: "id", caption: "ID", width: 70 },
+                    { dataField: "name", caption: "Name" },
+                    { dataField: "email", caption: "Email" },
+                    { dataField: "username", caption: "Username" },
+                    { dataField: "phone", caption: "Phone" },
+                    { dataField: "website", caption: "Website" }
+                  ],
+                  paging: {
+                    pageSize: 10
+                  },
+                  selection: {
+                    mode: "single"
+                  },
+                  filterRow: {
+                    visible: true
+                  },
+                  searchPanel: {
+                    visible: true,
+                    width: 240,
+                    placeholder: "Search..."
+                  }
+                },
+                events: {
+                  "selection-changed": {
+                    handler: "handleGridSelectionChanged",
+                    args: {
+                      detailsGridId: "userDetailsGrid"
+                    }
+                  }
+                }
+              }
+            ]
           },
-          keyExpr: "id",
-          showBorders: true,
-          rowAlternationEnabled: true,
-          columns: [
-            { dataField: "id", caption: "ID", width: 70 },
-            { dataField: "name", caption: "Name" },
-            { dataField: "email", caption: "Email" },
-            { dataField: "username", caption: "Username" },
-            { dataField: "phone", caption: "Phone" },
-            { dataField: "website", caption: "Website" }
-          ],
-          paging: {
-            pageSize: 10
-          },
-          selection: {
-            mode: "multiple"
-          },
-          filterRow: {
-            visible: true
-          },
-          searchPanel: {
-            visible: true,
-            width: 240,
-            placeholder: "Search..."
+          {
+            type: "container",
+            layout: "vertical",
+            style: { flex: "1" },
+            children: [
+              {
+                type: "component",
+                component: "DxButton",
+                props: {
+                  text: "User Details (Posts)",
+                  type: "default",
+                  stylingMode: "outlined",
+                  disabled: true
+                },
+                style: { marginBottom: "10px" }
+              },
+              {
+                type: "component",
+                component: "DxDataGrid",
+                id: "userDetailsGrid",
+                props: {
+                  dataSource: [],
+                  keyExpr: "id",
+                  showBorders: true,
+                  rowAlternationEnabled: true,
+                  columns: [
+                    { dataField: "id", caption: "Post ID", width: 80 },
+                    { dataField: "title", caption: "Title" },
+                    { dataField: "body", caption: "Body", width: 300 }
+                  ],
+                  paging: {
+                    pageSize: 10
+                  },
+                  noDataText: "Select a user to view their posts"
+                }
+              }
+            ]
           }
-        }
+        ]
       }
     ]
   },

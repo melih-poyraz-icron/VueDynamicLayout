@@ -80,6 +80,45 @@ const eventHandlers = {
     if (callback && typeof callback === 'function') {
       callback(e, args)
     }
+  },
+
+  // Handle grid selection change
+  handleGridSelectionChanged: async (e, args = {}) => {
+    const { detailsGridId } = args
+    const selectedRows = e.selectedRowsData || []
+    
+    console.log('Grid selection changed:', { selectedRows, detailsGridId })
+    
+    if (selectedRows.length === 0) {
+      console.log('No row selected')
+      return
+    }
+    
+    const selectedUser = selectedRows[0]
+    const userId = selectedUser.id
+    
+    console.log('Selected user:', selectedUser)
+    notify(`Loading posts for ${selectedUser.name}...`, 'info', 1000)
+    
+    try {
+      // Fetch user's posts from JSONPlaceholder API
+      const response = await fetch(`https://jsonplaceholder.typicode.com/posts?userId=${userId}`)
+      const posts = await response.json()
+      
+      console.log(`Fetched ${posts.length} posts for user ${userId}`)
+      
+      // Dispatch custom event to update the details grid
+      console.log(`Dispatching updateGridData event for: ${detailsGridId}`)
+      const event = new CustomEvent('updateGridData', {
+        detail: { gridId: detailsGridId, data: posts }
+      })
+      window.dispatchEvent(event)
+      
+      notify(`Loaded ${posts.length} posts for ${selectedUser.name}`, 'success', 2000)
+    } catch (error) {
+      console.error('Error fetching user posts:', error)
+      notify('Error loading user posts', 'error', 2000)
+    }
   }
 }
 </script>
